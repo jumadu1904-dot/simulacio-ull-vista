@@ -26,6 +26,10 @@ interface Props {
   showPulse: boolean
   photoMode: boolean
   showFocus: boolean
+  /** gir automàtic de 360° al voltant de l'ull */
+  autoRotate: boolean
+  /** segons que triga a fer una volta completa */
+  rotateSeconds: number
 }
 
 /** Transició suau d'un valor (el reflex pupil·lar i l'acomodació no són instantanis) */
@@ -50,10 +54,11 @@ const VIEWS: Record<ViewId, { pos: [number, number, number]; target: [number, nu
 }
 
 /** Moviments de càmera suaus entre vistes predefinides (ideal per gravar) */
-function CameraRig({ view, nonce }: { view: ViewId; nonce: number }) {
+function CameraRig({ view, nonce, paused }: { view: ViewId; nonce: number; paused: boolean }) {
   const { camera, size } = useThree()
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const anim = useRef(true)
+  const elapsed = useRef(0)
   const goal = useMemo(() => {
     const v = VIEWS[view]
     const t = new THREE.Vector3(...v.target)
@@ -65,6 +70,7 @@ function CameraRig({ view, nonce }: { view: ViewId; nonce: number }) {
 
   useEffect(() => {
     anim.current = true
+    elapsed.current = 0
   }, [goal, nonce])
 
   useEffect(() => {
@@ -76,11 +82,28 @@ function CameraRig({ view, nonce }: { view: ViewId; nonce: number }) {
 
   useFrame((_, dt) => {
     if (!anim.current || !controls) return
+    // No es barallem amb la rotació 360° i mai animem més de 2,5 s
+    elapsed.current += dt
+    if (paused || elapsed.current > 2.5) {
+      anim.current = false
+      return
+    }
     const k = 1 - Math.exp(-dt * 3)
     camera.position.lerp(goal.p, k)
     controls.target.lerp(goal.t, k)
     controls.update()
     if (camera.position.distanceTo(goal.p) < 0.005 && controls.target.distanceTo(goal.t) < 0.005) anim.current = false
+  })
+  return null
+}
+
+/** Mentre gira, centra suaument el punt de rotació a l'ull perquè la volta quedi equilibrada */
+const EYE_CENTER = new THREE.Vector3(-0.3, 0, 0)
+function OrbitCenter({ active }: { active: boolean }) {
+  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+  useFrame((_, dt) => {
+    if (!active || !controls || controls.target.distanceTo(EYE_CENTER) < 0.001) return
+    controls.target.lerp(EYE_CENTER, 1 - Math.exp(-dt * 1.5))
   })
   return null
 }
@@ -98,7 +121,7 @@ function Magnifier({ at }: { at: V2 }) {
   )
 }
 
-export function Scene({ target, distance, intensity, view, viewNonce, showRays, showPulse, photoMode, showFocus }: Props) {
+export function Scene({ target, distance, intensity, view, viewNonce, showRays, showPulse, photoMode, showFocus, autoRotate, rotateSeconds }: Props) {
   const k = useSmoothed(target.k, 3.2)
   const pupilR = useSmoothed(target.pupilR, 2.4)
   const axial = useSmoothed(target.axial, 2.2)
@@ -112,7 +135,7 @@ export function Scene({ target, distance, intensity, view, viewNonce, showRays, 
   return (
     <>
       <color attach="background" args={['#060a14']} />
-      <CameraRig view={view} nonce={viewNonce} />
+      <CameraRig view={view} nonce={viewNonce} paused={autoRotate} />
 
       <ambientLight intensity={0.25 + 0.35 * light} />
       <directionalLight position={[-4, 5, 6]} intensity={1.4 + 1.6 * light} color="#fff4e6" />
@@ -132,7 +155,16 @@ export function Scene({ target, distance, intensity, view, viewNonce, showRays, 
       <NervePulse landings={landings} axial={axial} active={showRays && showPulse && landings.length > 0} />
       {photoMode && <Magnifier at={retinaPoint(0, axial)} />}
 
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} minDistance={1.2} maxDistance={18} />
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.08}
+        minDistance={1.2}
+        maxDistance={18}
+        autoRotate={autoRotate}
+        autoRotateSpeed={60 / rotateSeconds}
+      />
+      <OrbitCenter active={autoRotate} />
 
       <EffectComposer multisampling={4}>
         <Bloom intensity={1.15} luminanceThreshold={1.0} luminanceSmoothing={0.2} mipmapBlur radius={0.7} />

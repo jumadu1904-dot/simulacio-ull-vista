@@ -144,3 +144,17 @@ kbd { background: #1a2338; border: 1px solid var(--line); border-radius: 4px; pa
   .pr-card { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; height: 70%; }
   .caption { max-width: calc(100% - 40px); }
 }
+
+/* ---------- Rotació 360° ---------- */
+.rotate {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 10px;
+  background: #0e1526; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; font-weight: 600; text-align: left; transition: all 0.15s;
+}
+.rotate kbd { margin-left: auto; }
+.rotate:hover { border-color: #3b4c75; }
+.rotate--on { border-color: var(--cyan); background: #12223a; box-shadow: 0 0 0 1px var(--cyan) inset; }
+.rotate__icon { font-size: 20px; color: var(--cyan); display: inline-block; }
+.spin { animation: spin 1.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.slider--compact { margin-top: 10px; }

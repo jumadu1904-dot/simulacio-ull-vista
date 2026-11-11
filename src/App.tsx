@@ -28,11 +28,15 @@ export default function App() {
   const [viewNonce, setViewNonce] = useState(0)
   const [showRays, setShowRays] = useState(true)
   const [showPulse, setShowPulse] = useState(true)
+  const [autoRotate, setAutoRotate] = useState(false)
+  const [rotateSeconds, setRotateSeconds] = useState(30)
   const [panelHidden, setPanelHidden] = useState(false)
   const [hovered, setHovered] = useState<PartId | null>(null)
   const [selected, setSelected] = useState<PartId | null>(null)
 
   const setView = (v: ViewId) => {
+    // canviar de vista atura la rotació perquè la càmera hi pugui anar
+    setAutoRotate(false)
     setViewState(v)
     setViewNonce((n) => n + 1)
   }
@@ -46,6 +50,7 @@ export default function App() {
       if ((e.target as HTMLElement).tagName === 'INPUT') return
       if (e.key === 'h' || e.key === 'H') setPanelHidden((v) => !v)
       if (e.key === 'p' || e.key === 'P') setStudy((v) => !v)
+      if (e.key === 'r' || e.key === 'R') setAutoRotate((v) => !v)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -99,6 +104,8 @@ export default function App() {
               showPulse={showPulse}
               photoMode={photoMode}
               showFocus={disorder === 'myopia' || disorder === 'hyperopia'}
+              autoRotate={autoRotate}
+              rotateSeconds={rotateSeconds}
             />
           </LabelContext.Provider>
         </Canvas>
@@ -150,6 +157,10 @@ export default function App() {
           showPulse={showPulse}
           setShowPulse={setShowPulse}
           onHide={() => setPanelHidden(true)}
+          autoRotate={autoRotate}
+          setAutoRotate={setAutoRotate}
+          rotateSeconds={rotateSeconds}
+          setRotateSeconds={setRotateSeconds}
           stats={stats}
         />
       )}

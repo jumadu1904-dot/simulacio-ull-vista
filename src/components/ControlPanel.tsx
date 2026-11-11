@@ -47,6 +47,10 @@ interface Props {
   showPulse: boolean
   setShowPulse: (v: boolean) => void
   onHide: () => void
+  autoRotate: boolean
+  setAutoRotate: (v: boolean) => void
+  rotateSeconds: number
+  setRotateSeconds: (v: number) => void
   stats: { pupilMm: number; accommodation: number; lensPower: number; focusText: string; inFocus: boolean }
 }
 
@@ -137,6 +141,18 @@ export function ControlPanel(p: Props) {
             </button>
           ))}
         </div>
+        <button className={`rotate ${p.autoRotate ? 'rotate--on' : ''}`} onClick={() => p.setAutoRotate(!p.autoRotate)}>
+          <span className={`rotate__icon ${p.autoRotate ? 'spin' : ''}`}>⟳</span>
+          {p.autoRotate ? 'Aturar la rotació 360°' : "Girar l'ull 360°"}
+          <kbd>R</kbd>
+        </button>
+        <label className="slider slider--compact">
+          <span className="slider__head">
+            Velocitat <b>una volta cada {p.rotateSeconds} s</b>
+          </span>
+          <input type="range" min={8} max={90} step={1} value={98 - p.rotateSeconds} onChange={(e) => p.setRotateSeconds(98 - +e.target.value)} />
+          <span className="slider__ends"><span>Lent</span><span>Ràpid</span></span>
+        </label>
         <div className="toggles">
           <label className="check">
             <input type="checkbox" checked={p.showRays} onChange={(e) => p.setShowRays(e.target.checked)} /> Raigs de llum
@@ -151,7 +167,7 @@ export function ControlPanel(p: Props) {
         <span><i style={{ background: RAY_HEX.top }} />Raigs de la punta de la fletxa</span>
         <span><i style={{ background: RAY_HEX.bottom }} />Raigs de la base de la fletxa</span>
         <p className="hint">
-          Tecles: <kbd>H</kbd> amagar panell · <kbd>P</kbd> presentació/estudi. Arrossega per girar, roda per fer zoom. Passa el ratolí per les parts de l'ull.
+          Tecles: <kbd>H</kbd> amagar panell · <kbd>P</kbd> presentació/estudi · <kbd>R</kbd> girar 360°. Arrossega per girar, roda per fer zoom. Passa el ratolí per les parts de l'ull.
         </p>
       </footer>
     </aside>
